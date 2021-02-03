@@ -3,31 +3,41 @@ Require Import NArith.
 Require Import List.
 Require Import Sorting.
 Require Import Coq.Program.Equality.
+Ltac completer :=
+  repeat match goal with
+         | [ |- forall n,_ ] =>induction n; trivial
+         | [ n : nat |- ?n + _ = _  ] =>simpl
+         | [n:nat , IHn: _ = ?n |- _ = S ?n] => rewrite IHn
+         | [n:nat |- S ?n = S ?n] => reflexivity
+         end .
+
+
 
 Lemma minus_n_0 : forall n, n-0 = n.
 Proof.
-induction n; trivial.
+  completer.
 Defined.
 
 Lemma plus_0_n : forall n, 0+n = n.
 Proof.
-induction n; trivial.
+  completer.
 Defined.
 
 Lemma plus_n_0 : forall n, n+0 = n.
 Proof.
-induction n; trivial.
-simpl; rewrite IHn; reflexivity.
-Defined.
+  completer.
+Qed.
+
 
 Lemma plus_n_1 : forall n, n+1 = S n.
 Proof.
-induction n; trivial.
-simpl; rewrite IHn; reflexivity.
-Defined.
+  completer.
+Qed.
+
 
 Lemma minus_n1_n2_0 : forall n1 n2, n1+n2-0 = n1+n2.
 Proof.
+
 induction n1; induction n2; trivial.
 Defined.
 

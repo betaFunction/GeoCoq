@@ -4,10 +4,11 @@ Section Euclid.
 
 Context `{Ax:area}.
 
-Lemma proposition_48A : 
-   forall A B C D a b c d, 
-   SQ A B C D -> SQ a b c d -> EF A B C D a b c d ->
-   Cong A B a b.
+Lemma proposition_48A :
+   forall A B C D a b c d,
+     SQ A B C D -> SQ a b c d ->
+     EF A B C D a b c d ->
+     Cong A B a b.
 Proof.
 intros.
 assert (PG A B C D) by (conclude lemma_squareparallelogram).
@@ -114,4 +115,3 @@ close.
 Qed.
 
 End Euclid.
-

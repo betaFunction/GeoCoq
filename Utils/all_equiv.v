@@ -3,29 +3,71 @@ Require Export List.
 Definition all_equiv (l: list Prop) :=
   forall x y, In x l -> In y l -> (x <-> y).
 
+Ltac completer :=
+  repeat match goal with
+           | [ |- _ /\ _ ] => constructor
+           | [ H : ?P /\ ?Q |- _ ] => destruct H;
+             repeat match goal with
+                    | [ H' : P /\ Q |- _ ] => clear H'
+                    end
+           | [ H : ?P -> _, H' : ?P |- _ ] => specialize (H H')
+           | [ |- forall x y, _ ] => intros x y
+           | [ |- forall x , _ ] => intros x
+           | [ |- _ <-> _ ] => split;auto
+         end.
+
 Lemma all_equiv_chara : forall l,
-  all_equiv l <-> forall x y, In x l -> In y l -> x -> y.
-Proof.
+    all_equiv l <-> forall x y, In x l -> In y l -> x -> y.
   unfold all_equiv.
-  intro l; split; [intros He x y Hx Hy; rewrite (He x y); auto|].
-  intros Himp x y Hxl Hyl.
-  split; apply Himp; assumption.
+
+
+  repeat match goal with
+  | [ |- forall x , _ ] => intros x
+  | [ |- _ <-> _ ] => split;intro
+         end.
+
+  repeat match goal with
+  | [H : forall x y:Prop,  _ -> _  -> x <-> y |-
+                            _ -> _ -> x -> y]
+    => apply H
+  |  [ |- _ <-> _ ] => split
+  |  [ |- _-> _->_  <-> _ ] => split
+         end.
+
+  repeat match goal with
+  | [H : forall x y:Prop,  _ -> _  -> x <-> y |-
+                            _ -> _ -> x -> y]
+    => apply H
+  |  [ |- _-> _->_  <-> _ ] => split
+  | [H : forall x y : Prop, _ -> _ -> x -> y |-
+                            x -> y
+    ] => apply H;auto
+  | [H : forall x y : Prop, _ -> _ -> x -> y |-
+                            y -> x
+    ] => apply H;auto
+  end.
 Qed.
 
+
+
+
+
 Definition all_equiv'_aux (l: list Prop) : Prop.
-induction l; [exact True|].
-induction l; [exact True|].
+  induction l.
+  exact True.
+  induction l.
+  exact True.
 exact ((a -> a0) /\ IHl).
-Defined.
+  Defined.
+
 
 Lemma all_equiv'_auxP : forall l n1 n2 d1 d2,
   l <> nil -> all_equiv'_aux l ->
   n1 < length l -> n2 < length l -> n1 <= n2 ->
   nth n1 l d1 -> nth n2 l d2.
-Proof.
-intro l; elim l; [intros ? ? ? ? H; exfalso; apply H; auto|
+  intro l; elim l; [intros ? ? ? ? H; exfalso; apply H; auto|
                   clear l; intros a l _; revert a].
-elim l; [intro a|clear l; intros b l IHl a]; intros n1 n2 d1 d2 _ H Hn1 Hn2 Hn.
+  elim l; [intro a|clear l; intros b l IHl a]; intros n1 n2 d1 d2 _ H Hn1 Hn2 Hn.
 
   {
   simpl in Hn1, Hn2.
@@ -62,42 +104,7 @@ Definition all_equiv' (l: list Prop) : Prop.
 induction l; [exact True|].
 exact ((last l a -> a) /\ all_equiv'_aux (a::l)).
 Defined.
-(*
-Definition all_equiv' (l: list Prop) : Prop.
-Proof.
-induction l; [exact True|].
-induction l; [exact True|].
-exact ((a <-> a0) /\ IHl).
-Defined.
 
-Lemma all_equiv_equiv : forall l, all_equiv l <-> all_equiv' l.
-Proof.
-assert (IH : forall a a0 l,
-  all_equiv' (a::a0::l) <-> (a <-> a0) /\ all_equiv' (a0::l))
-  by (intros a a0 l; induction l; simpl; tauto).
-unfold all_equiv; intro l; induction l; [simpl; tauto|].
-induction l; [simpl|clear IHl0; rewrite IH; split]; clear IH.
-
-  {
-  split; [auto|intros _ x y Hx Hy].
-  elim Hx; [clear Hx; intro Hx; rewrite <- Hx|intuition].
-  elim Hy; [clear Hy; intro Hy; rewrite <- Hy|]; intuition.
-  }
-
-  {
-  intro H; split; [apply H; simpl; tauto|].
-  apply IHl; intros x y Hx Hy; apply H; right; assumption.
-  }
-
-  {
-  intros [H Hl] x y [Ha|Hx] [Ha'|Hy];
-  try (rewrite <- Ha; clear Ha);
-  try (rewrite <- Ha'; clear Ha'); [tauto| | |];
-  try (cut (a0 <-> y); [try tauto|apply IHl; try assumption; left; reflexivity]);
-  try (cut (a0 <-> x); [tauto|apply IHl; try assumption; left; reflexivity]).
-  }
-Qed.
-*)
 
 Lemma all_equiv__equiv : forall l, all_equiv l <-> all_equiv' l.
 Proof.
@@ -151,6 +158,7 @@ intro l; split.
   apply PeanoNat.Nat.lt_succ_r; auto.
   }
 Qed.
+
 
 Definition stronger (l1 l2 : list Prop) :=
   forall x y, In x l1 -> In y l2 -> (x -> y).
